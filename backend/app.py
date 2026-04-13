@@ -9,7 +9,7 @@ def home():
 @app.route('/users', methods=['GET'])
 def users():
     return jsonify([
-        {"id": 1, "nom": "Jean"},
+        {"id": 1, "nom": "phanuel"},
         {"id": 2, "nom": "Marie"}
     ])
 

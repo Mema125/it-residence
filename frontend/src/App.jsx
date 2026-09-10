@@ -1,121 +1,117 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Navigate, Route, Routes, Link, useNavigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import ClassDetail from './pages/ClassDetail'
+import JoinInvite from './pages/JoinInvite'
+import AssessmentBuilder from './pages/AssessmentBuilder'
+import AssessmentDetail from './pages/AssessmentDetail'
+import AssessmentTake from './pages/AssessmentTake'
+import SubmissionGrade from './pages/SubmissionGrade'
 
-function App() {
-  const [count, setCount] = useState(0)
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="page">Chargement...</div>
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+function Layout({ children }) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <div className="app-shell">
+      <header className="app-header">
+        <Link to="/" className="brand">
+          IT Résidence
+        </Link>
+        {user && (
+          <nav>
+            <span className="hint">{user.full_name}</span>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                logout()
+                navigate('/login')
+              }}
+            >
+              Déconnexion
+            </button>
+          </nav>
+        )}
+      </header>
+      <main>{children}</main>
+    </div>
   )
 }
 
-export default App
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/join/:token" element={<JoinInvite />} />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/classes/:classId"
+        element={
+          <RequireAuth>
+            <ClassDetail />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/classes/:classId/new-assessment"
+        element={
+          <RequireAuth>
+            <AssessmentBuilder />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/assessments/:assessmentId"
+        element={
+          <RequireAuth>
+            <AssessmentDetail />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/submissions/:submissionId/take"
+        element={
+          <RequireAuth>
+            <AssessmentTake />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/submissions/:submissionId/grade"
+        element={
+          <RequireAuth>
+            <SubmissionGrade />
+          </RequireAuth>
+        }
+      />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Layout>
+        <AppRoutes />
+      </Layout>
+    </AuthProvider>
+  )
+}
